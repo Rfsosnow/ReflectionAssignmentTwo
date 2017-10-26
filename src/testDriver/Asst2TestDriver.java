@@ -21,8 +21,8 @@ public class Asst2TestDriver
     public Asst2TestDriver(String ObjInspectorName, boolean recursive)
 	throws Exception
     {
-	this.recursive=recursive;
-	setObjectInspectorInfo(ObjInspectorName);
+    	this.recursive=recursive;
+    	setObjectInspectorInfo(ObjInspectorName);
     }
     //--------------------------------------------------------------------
     public void setObjectInspectorInfo(String ObjectInspectorName)
@@ -31,7 +31,7 @@ public class Asst2TestDriver
 	Class objInspectClass=null;
 	try
 	    {
-		objInspectClass = Class.forName(ObjectInspectorName);
+		objInspectClass = Class.forName("testDriver.Inspector");
 		ObjInspector = objInspectClass.newInstance();
 	    }
 	catch(Exception e) 
