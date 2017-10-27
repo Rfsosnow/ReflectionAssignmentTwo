@@ -9,6 +9,7 @@ import java.lang.Class.*;
 
 public class Inspector {
 	
+	private boolean fileOutputOn = true;
 	private boolean rec = false;
 	public Object globalObject;
 	
@@ -28,7 +29,26 @@ public class Inspector {
 		//GET THE NAME OF THE OBJECT, IF IT ISNT AN ARRAY
 		if(isArray(recursedObject)) {
 			System.out.println("ARRAY HANDLING PLACEHOLDER");
-			//do something else here
+			
+			
+			System.out.println("The Object is an array, its component type is: "+recursedObject.getClass().getComponentType().getName());
+			try {
+				
+				
+				Object componentObject = recursedObject.getClass().getComponentType().newInstance();
+				System.out.println("The new instances name is: "+componentObject.getClass().getName());
+				addToTupleList(componentObject);	
+				while(isArray(componentObject)) {
+					componentObject = componentObject.getClass().getComponentType().newInstance();
+					System.out.println("The interior instances name is: "+componentObject.getClass().getName());
+					addToTupleList(componentObject);
+				}
+				
+			}catch(IllegalAccessException e) {
+				
+			}catch(InstantiationException e) {
+				
+			}
 		}else {
 			System.out.println("The Object name is: "+recursedObject.getClass().getSimpleName());
 		}
@@ -45,7 +65,7 @@ public class Inspector {
 				System.out.println("The amount of objects in the list: BEFORE INSIDE SUPERCLASS: "+reflectedClassList.size()+" \n");
 
 				System.out.println("This class' direct superClass is: "+ recursedObject.getClass().getSuperclass().getName() +" \n");
-				//addToTupleList(recursedObject.getClass().getSuperclass());
+				addToTupleList(recursedObject.getClass().getSuperclass());
 			}else {
 				System.out.println("This class is top of the Ladder. \n");
 			}
@@ -72,12 +92,13 @@ public class Inspector {
 	
 	public void inspect(Object obj, boolean recursive) {
 		
-		
-		try {
-			FileOutputStream f = new FileOutputStream("file.txt");
-		    System.setOut(new PrintStream(f));
-		}catch (IOException e) {
-			e.printStackTrace();
+		if(fileOutputOn) {
+			try {
+				FileOutputStream f = new FileOutputStream("file.txt");
+			    System.setOut(new PrintStream(f));
+			}catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		rec = recursive;
 		globalObject = obj;		
@@ -137,7 +158,9 @@ public class Inspector {
 		if(objectFields.length == 0) {
 			System.out.println("The object has no declared fields \n");
 		}else {
-			objectFields = fieldAccessibility(objectFields);
+			if(!obj.equals(new Object()));{
+				objectFields = fieldAccessibility(objectFields);
+			}
 			System.out.println("The object has the declared fields: \n"+objectFieldDetailsToString(objectFields,index));
 		}
 	}
@@ -161,9 +184,8 @@ public class Inspector {
 			fieldValue += ("getName: "+field.getName()+ " \n");
 			fieldValue += ("Field Type: "+field.getType()+ " \n");
 			fieldValue += ("the hashcode is: "+field.getClass().hashCode()+" \n");
-			fieldValue += "\n The value is not a primitive.";
 				if(rec) {
-					//addToTupleList(field);
+					addToTupleList(field);
 					//add the object in field to list to recurse on if it doesn't exist in it already
 				}
 		}else {
@@ -235,7 +257,7 @@ public class Inspector {
 				if(rec) {
 					//System.out.println("The amount of objects in the list: INSIDE EXCEPTIONS"+reflectedClassList.size()+" \n");
 
-					//addToTupleList(exceptionTypes[i]);
+					addToTupleList(exceptionTypes[i]);
 				}
 				detailReturns += ("            "+exceptionTypes[i].getName());
 				if((i+1)<exceptionTypes.length) {
@@ -260,7 +282,7 @@ public class Inspector {
 			String interfacesSoFar = "";
 			for (int i = 0; i<implemented.length;i++) {
 				if(rec) {
-					//addToTupleList(implemented[i]);
+					addToTupleList(implemented[i]);
 				}
 				interfacesSoFar+=("    "+implemented[i].getName());
 				if((i+1)<implemented.length) {
