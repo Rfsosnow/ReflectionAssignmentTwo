@@ -9,26 +9,35 @@ import java.lang.Class.*;
 
 public class Inspector {
 	
+	//switch between output to console or file
 	private boolean fileOutputOn = true;
+	//recursive in this program works in such that whenever something is 
+	//in a position to be added to the list of things to do yet, it checks the flag
+	//and if the flag is not set, it will not add that object to the list
 	private boolean rec = false;
-	public Object globalObject;
 	
+	//Pair of dynamic lists to control what classes we've seen, and haven't seen
+	//ReflectedClassHashes contains each parallel indexed reflectedClassList object's hashCode to weed out non-unique class objects
+	//ReflectedClassList contains the found objects, as well as a boolean paired to each that will tell if its been read yet or not
 	private ArrayList<Integer> reflectedClassHashes = new ArrayList<Integer>();
 	private ArrayList<ClassHashTuple> reflectedClassList = new ArrayList<ClassHashTuple>();
 	
+	//default Constructor
 	public Inspector() {
 	}
 	
+	/*
+	 * InspectRecursive-
+	 * Takes in an index, to be used in the above ArrayLists to get an object to reflect upon
+	 */
+	
 	public void inspectRecursive(int index) {
-		
 		
 		//GET THE OBJECT IN THE TUPLELIST
 		Object recursedObject = reflectedClassList.get(index).getTupleObject();
 		
 		//GET THE NAME OF THE OBJECT, IF IT ISNT AN ARRAY
-		if(isArray(recursedObject)) {
-			System.out.println("ARRAY HANDLING PLACEHOLDER");
-			
+		if(isArray(recursedObject)) {			
 			System.out.println("The Object is an Array: ");
 			classArrayDetails(recursedObject);
 			System.out.println("Its component type is: "+recursedObject.getClass().getComponentType().getName());
@@ -38,11 +47,10 @@ public class Inspector {
 		}
 		
 		//GET THE INTERFACES THE OBJECT IMPLEMENTS
-		//May have to recurse here
 		printImplementedInterfaces(recursedObject);
 		
 		//GET THE NAME OF THE SUPERCLASS AND ADD TO THE LIST IF RECURSE ACTIVE
-		//recursion case handled here
+		//If it is the top class, it will not attempt to do so. 
 		if(rec) {
 			System.out.println("RECURSION PLACEHOLDER SUPERCLASS.");
 			if(!recursedObject.getClass().equals(Object.class)) {
@@ -69,8 +77,15 @@ public class Inspector {
 		
 	}
 	
+	
+	/*
+	 * Inspect-
+	 * Takes in the object to be reflected on, and whether to do so recursively
+	 */
 	public void inspect(Object obj, boolean recursive) {
 		
+		
+		//Make small change if run to output to file
 		if(fileOutputOn) {
 			try {
 				FileOutputStream f = new FileOutputStream("file.txt");
@@ -79,20 +94,17 @@ public class Inspector {
 				e.printStackTrace();
 			}
 		}
+		
+		//save necessary values to private version
 		rec = recursive;
-		globalObject = obj;		
 		
+		//Even if recursive isn't set, add the first object to the list
 		addToTupleList(obj);
-		
+		//And then get the index of that file (should always just be zero)
 		int indexOfClassToRecurseOn = getUnreadTupleFromList();
-		/*		
-		if(indexOfClassToRecurseOn == -1) {
-			//No more objects to recurse on
-			System.out.println("All done here.");
-		} else {
-			inspectRecursive(indexOfClassToRecurseOn);
-		}
-		*/
+
+		//Recurse on that object. If recurse is set to true, the list will become more populated, and the while loop
+		//will continue, until the function returns the value that flags that all the elements have been read
 		System.out.println("Starting recursion on the object: "+reflectedClassList.get(indexOfClassToRecurseOn).getTupleObject()+" \n With Hash Value: "+reflectedClassHashes.get(indexOfClassToRecurseOn));
 		while(indexOfClassToRecurseOn != -1) {
 			inspectRecursive(indexOfClassToRecurseOn);
@@ -102,9 +114,12 @@ public class Inspector {
 				System.out.println("Starting recursion on the object: "+reflectedClassList.get(indexOfClassToRecurseOn).getTupleObject()+" \n With Hash Value: "+reflectedClassHashes.get(indexOfClassToRecurseOn));
 			}
 		}
+		System.out.println("Nothing else to Recurse on. We are done here. \n");
 		
 	}
 	
+	
+	//simple function that takes in a field of the type array, and returns its size/dimensions
 	private int arrayDimensionToString(Field field) {
 		Class fieldArrayClass = field.getType();
 		int depth =0;
@@ -115,6 +130,8 @@ public class Inspector {
 		return depth;
 	}
 	
+	//simple function to do similar to the above, but it only prints to .out. the values found, and adds
+	//the object to the list
 	public void classArrayDetails(Object array) {
 		Class arrayClass = array.getClass();
 		int depth = 0;
@@ -126,6 +143,11 @@ public class Inspector {
 		System.out.println("The array is of the dimension: "+depth+" and its name is "+array.toString());
 	}
 	
+	
+	//
+	//This function will create a new Tuple of an object
+	//and checks to see if the object's  hashcode has already been entered into the list
+	//if not, it adds it, and its hashcode to respective lists
 	private void addToTupleList(Object obj) {
 		ClassHashTuple newTuple = new ClassHashTuple(obj);
 		if(!reflectedClassHashes.contains(obj.hashCode())) {
@@ -134,6 +156,9 @@ public class Inspector {
 		}
 	}
 	
+	//
+	//Iterate through the reflectedClassList, stopping and returning the index at 
+	//which an element can be found that has not yet been read, and flipping its read value
 	private int getUnreadTupleFromList() {
 		for (int i =0; i< reflectedClassList.size(); i++) {
 			ClassHashTuple prospect = reflectedClassList.get(i);
@@ -145,14 +170,9 @@ public class Inspector {
 		return -1; 
 	}
 	
-	/*
-	private Object[] accessibilitySet(Object[] objectArray) {
-		for (int i=0; i<objectArray.length;i++) {
-			objectArray[i].setAccessible(true);
-		}
-	}
-	*/
-	
+	//
+	//Function iterates through a list of Fields and sets them to accessible, in 
+	//case they are private
 	private Field[] fieldAccessibility(Field[] fieldArray) {
 		for (int i=0; i<fieldArray.length;i++) {
 			fieldArray[i].setAccessible(true);
@@ -160,6 +180,8 @@ public class Inspector {
 		return fieldArray;
 	}
 	
+	//
+	//print the details about an Objects fields
 	private void printObjectFields(Object obj,int index) {
 		Field[] objectFields = obj.getClass().getDeclaredFields();
 		if(objectFields.length == 0) {
@@ -171,6 +193,10 @@ public class Inspector {
 		}
 	}
 
+	//
+	//delegated function from printObjectsFields. Takes in a fieldArray of an object, and creates a string
+	//about its Modifiers, type... ect.
+	//delegates the Field value to another function
 	private String objectFieldDetailsToString(Field[] objectFields, int index) {
 		String fieldDetailString="";
 		
@@ -184,6 +210,10 @@ public class Inspector {
 		return fieldDetailString;
 	}
 
+	//
+	//delegated function from objectFieldDetailsToString. Takes in a single field and returns a string of its name, its type, and
+	//if its easily done, its value. Else if it is an object, or an array, it handles those differently depending on whether recursion 
+	//is set
 	private String fieldValueToString(Field field, int index) {
 		String fieldValue = "";
 		if(!field.getType().isPrimitive()) {
@@ -200,7 +230,6 @@ public class Inspector {
 						addToTupleList(field);
 						fieldValue += ("the hashcode is: "+field.getType().hashCode()+" \n");
 					}
-					//add the object in field to list to recurse on if it doesn't exist in it already
 				}
 		}else {
 			Object val;
@@ -222,7 +251,9 @@ public class Inspector {
 	}
 
 
-
+	//
+	//Function which will print out the list of methods of an object
+	//delegates the method details to objectMethodsToString
 	private void printObjectMethods(Object obj) {
 		Method[] methods = obj.getClass().getDeclaredMethods();
 		if(methods.length == 0) {
@@ -232,6 +263,10 @@ public class Inspector {
 		}
 	}
 
+	//
+	//Function delegated from printObjectMethods
+	//Will take in a list of methods, and iterate through them
+	//returning relevant details as a string
 	private String objectMethodsToString(Method[] methods) {
 		String methodReturns="";
 		
@@ -245,6 +280,10 @@ public class Inspector {
 		return methodReturns;
 	}
 
+	//
+	//Delegated from objectMethodsToString
+	//deals with a single methods details, returning them as a whitespace oriented block
+	//
 	private String methodDetailsToString(Method method) {
 		String detailReturns = "";
 		
@@ -288,7 +327,11 @@ public class Inspector {
 	}
 
 
-	
+	//
+	//Function to iterate through the list of implemented interfaces and prints
+	//relevant details
+	//if recursion is set, attempting to add them to the list
+	//
 	private void printImplementedInterfaces(Object obj) {
 		Class[] implemented = obj.getClass().getInterfaces();
 		if (implemented.length ==0) {
@@ -350,8 +393,9 @@ public class Inspector {
 	}
 	
 	
-	
-	
+	//
+	//Made function since the standard library .isArray() does not work in every instance
+	//
 	public boolean isArray(Object obj){
 		boolean itIsArray = false;
 		if(obj.getClass().isArray()){
