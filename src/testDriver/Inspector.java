@@ -38,7 +38,7 @@ public class Inspector {
 		
 		//Section for delving into the methods of the object
 		
-		Method[] methods = obj.getClass().getMethods();
+		Method[] methods = obj.getClass().getDeclaredMethods();
 		counter = 0;
 		for (Method mthd :methods) {
 			counter++;
@@ -50,9 +50,13 @@ public class Inspector {
 			}
 			Class returnType = mthd.getReturnType();
 			System.out.println("The return type is "+ returnType.getName());
+			Class[] exceptionTypes = mthd.getExceptionTypes();
+			for (Class excptnType: exceptionTypes) {
+				System.out.println("The Exception thrown is: "+excptnType.getName());
+			}
+			System.out.println("And the modifier is of the form: " + Modifier.toString(mthd.getModifiers()));
 		}
-		//Class[] exceptionTypes = mthd.getExceptionTypes();
-		//for (Class excptnType: exceptionTypes)
+		
 		
 	}
 	
