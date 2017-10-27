@@ -21,7 +21,6 @@ public class Inspector {
 	
 	public void inspectRecursive(int index) {
 		
-		System.out.println("The amount of objects in the list BEGINNING RECURSION: "+reflectedClassList.size()+" \n");
 		
 		//GET THE OBJECT IN THE TUPLELIST
 		Object recursedObject = reflectedClassList.get(index).getTupleObject();
@@ -30,25 +29,10 @@ public class Inspector {
 		if(isArray(recursedObject)) {
 			System.out.println("ARRAY HANDLING PLACEHOLDER");
 			
+			System.out.println("The Object is an Array: ");
+			classArrayDetails(recursedObject);
+			System.out.println("Its component type is: "+recursedObject.getClass().getComponentType().getName());
 			
-			System.out.println("The Object is an array, its component type is: "+recursedObject.getClass().getComponentType().getName());
-			try {
-				
-				
-				Object componentObject = recursedObject.getClass().getComponentType().newInstance();
-				System.out.println("The new instances name is: "+componentObject.getClass().getName());
-				addToTupleList(componentObject);	
-				while(isArray(componentObject)) {
-					componentObject = componentObject.getClass().getComponentType().newInstance();
-					System.out.println("The interior instances name is: "+componentObject.getClass().getName());
-					addToTupleList(componentObject);
-				}
-				
-			}catch(IllegalAccessException e) {
-				
-			}catch(InstantiationException e) {
-				
-			}
 		}else {
 			System.out.println("The Object name is: "+recursedObject.getClass().getSimpleName());
 		}
@@ -62,7 +46,6 @@ public class Inspector {
 		if(rec) {
 			System.out.println("RECURSION PLACEHOLDER SUPERCLASS.");
 			if(!recursedObject.getClass().equals(Object.class)) {
-				System.out.println("The amount of objects in the list: BEFORE INSIDE SUPERCLASS: "+reflectedClassList.size()+" \n");
 
 				System.out.println("This class' direct superClass is: "+ recursedObject.getClass().getSuperclass().getName() +" \n");
 				addToTupleList(recursedObject.getClass().getSuperclass());
@@ -72,22 +55,18 @@ public class Inspector {
 		} else {
 			System.out.println("This class' direct SuperClass is: "+ recursedObject.getClass().getSuperclass().getName() + " \n");
 		}
-		System.out.println("The amount of objects in the list: AFTER SUPERCLASS: "+reflectedClassList.size()+" \n");
 		
 		//GET AND PRINT THE CONSTRUCTORS FOR THE OBJECT	
 		printConstructors(recursedObject);
 		
-		System.out.println("The amount of objects in the list: AFTER CONSTRUCTORS "+reflectedClassList.size()+" \n");
 		
 		//GET AND PRINT THE OBJECT METHODS AND THEIR SPECIFIC DETAILS
 		printObjectMethods(recursedObject);
 		
-		System.out.println("The amount of objects in the list: AFTER METHODS "+reflectedClassList.size()+" \n");
 		
 		//GET AND PRINT THE OBJECTS FIELDS
 		printObjectFields(recursedObject,index);
 		
-		System.out.println("The amount of objects in the list: AFTER FIELDS "+reflectedClassList.size()+" \n");
 	}
 	
 	public void inspect(Object obj, boolean recursive) {
@@ -126,6 +105,26 @@ public class Inspector {
 		
 	}
 	
+	private int arrayDimensionToString(Field field) {
+		Class fieldArrayClass = field.getType();
+		int depth =0;
+		while(fieldArrayClass.isArray()) {
+			depth++;
+			fieldArrayClass = fieldArrayClass.getComponentType();
+		}
+		return depth;
+	}
+	
+	public void classArrayDetails(Object array) {
+		Class arrayClass = array.getClass();
+		int depth = 0;
+		while(arrayClass.isArray()) {
+			depth++;
+			arrayClass = arrayClass.getComponentType();
+		}
+		addToTupleList(arrayClass);
+		System.out.println("The array is of the dimension: "+depth+" and its name is "+array.toString());
+	}
 	
 	private void addToTupleList(Object obj) {
 		ClassHashTuple newTuple = new ClassHashTuple(obj);
@@ -146,6 +145,14 @@ public class Inspector {
 		return -1; 
 	}
 	
+	/*
+	private Object[] accessibilitySet(Object[] objectArray) {
+		for (int i=0; i<objectArray.length;i++) {
+			objectArray[i].setAccessible(true);
+		}
+	}
+	*/
+	
 	private Field[] fieldAccessibility(Field[] fieldArray) {
 		for (int i=0; i<fieldArray.length;i++) {
 			fieldArray[i].setAccessible(true);
@@ -158,9 +165,8 @@ public class Inspector {
 		if(objectFields.length == 0) {
 			System.out.println("The object has no declared fields \n");
 		}else {
-			if(!obj.equals(new Object()));{
-				objectFields = fieldAccessibility(objectFields);
-			}
+			objectFields = fieldAccessibility(objectFields);
+			
 			System.out.println("The object has the declared fields: \n"+objectFieldDetailsToString(objectFields,index));
 		}
 	}
@@ -183,9 +189,17 @@ public class Inspector {
 		if(!field.getType().isPrimitive()) {
 			fieldValue += ("getName: "+field.getName()+ " \n");
 			fieldValue += ("Field Type: "+field.getType()+ " \n");
-			fieldValue += ("the hashcode is: "+field.getClass().hashCode()+" \n");
+			
 				if(rec) {
-					addToTupleList(field);
+					if(field.getType().isArray()) {
+						addToTupleList(field.getType());
+						fieldValue += ("the field is an array with dimension: "+arrayDimensionToString(field)+" \n");
+								
+						fieldValue += ("the hashcode is: "+field.getType().hashCode()+" \n");
+					}else {
+						addToTupleList(field);
+						fieldValue += ("the hashcode is: "+field.getType().hashCode()+" \n");
+					}
 					//add the object in field to list to recurse on if it doesn't exist in it already
 				}
 		}else {
@@ -206,6 +220,8 @@ public class Inspector {
 		fieldValue += "\n";
 		return fieldValue;
 	}
+
+
 
 	private void printObjectMethods(Object obj) {
 		Method[] methods = obj.getClass().getDeclaredMethods();
@@ -255,7 +271,6 @@ public class Inspector {
 			detailReturns += "        The method throws the following Exceptions: \n";
 			for (int i = 0;i<exceptionTypes.length;i++) {
 				if(rec) {
-					//System.out.println("The amount of objects in the list: INSIDE EXCEPTIONS"+reflectedClassList.size()+" \n");
 
 					addToTupleList(exceptionTypes[i]);
 				}

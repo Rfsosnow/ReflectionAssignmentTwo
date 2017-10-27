@@ -76,7 +76,7 @@ public class Asst2TestDriver
     //====================== MAIN =======================================
     public static void main(String[] args)
     {
-	boolean rec=false;
+	boolean rec=true;
 
 	if(args.length >= 1)
 	    {
